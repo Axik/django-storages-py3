@@ -3,20 +3,17 @@ from django.core.files.base import File
 from django.core.files.storage import Storage
 from django.db import connections
 from django.utils.encoding import force_unicode
+from django.core.exceptions import ImproperlyConfigured
 
 try:
     from gridfs import GridFS, NoFile
 except ImportError:
-    raise ImproperlyConfigured, "Could not load gridfs dependency.\
-    \nSee http://www.mongodb.org/display/DOCS/GridFS"
+    raise ImproperlyConfigured("Could not load gridfs dependency.\
+    \nSee http://www.mongodb.org/display/DOCS/GridFS")
 
-try:
-    from pymongo import Connection
-except ImportError:
-    raise ImproperlyConfigured, "Could not load pymongo dependency.\
-    \nSee http://github.com/mongodb/mongo-python-driver"
 
 class GridFSStorage(Storage):
+
     @property
     def fs(self):
         db = settings.GRIDFS_DATABASE
@@ -74,7 +71,9 @@ class GridFSStorage(Storage):
     def url(self, name):
         raise NotImplementedError()
 
+
 class GridFSFile(File):
+
     def __init__(self, name, storage, mode):
         self.name = name
         self._storage = storage
@@ -97,4 +96,3 @@ class GridFSFile(File):
 
     def close(self):
         self.file.close()
-
