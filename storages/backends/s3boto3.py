@@ -10,7 +10,7 @@ from django.conf import settings
 from django.core.files.base import File
 from django.core.files.storage import Storage
 from django.core.exceptions import ImproperlyConfigured, SuspiciousOperation
-from django.utils.encoding import force_unicode, smart_str
+from django.utils.encoding import force_text, smart_text
 
 try:
     from boto3.s3.connection import S3Connection, SubdomainCallingFormat
@@ -72,9 +72,9 @@ def safe_join(base, *paths):
     sensitive operation.
     """
     from urlparse import urljoin
-    base_path = force_unicode(base)
+    base_path = force_text(base)
     base_path = base_path.rstrip('/')
-    paths = [force_unicode(p) for p in paths]
+    paths = [force_text(p) for p in paths]
 
     final_path = base_path
     for path in paths:
@@ -217,10 +217,10 @@ class S3BotoStorage(Storage):
                                       name)
 
     def _encode_name(self, name):
-        return smart_str(name, encoding=self.file_name_charset)
+        return smart_text(name, encoding=self.file_name_charset)
 
     def _decode_name(self, name):
-        return force_unicode(name, encoding=self.file_name_charset)
+        return force_text(name, encoding=self.file_name_charset)
 
     def _compress_content(self, content):
         """Gzip a given string content."""
