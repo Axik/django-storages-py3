@@ -22,8 +22,10 @@ except ImportError:
 
 
 class LibCloudStorage(Storage):
+
     """Django storage derived class using apache libcloud to operate
     on supported providers"""
+
     def __init__(self, provider_name=None, option=None):
         if provider_name is None:
             provider_name = getattr(settings, 'DEFAULT_LIBCLOUD_PROVIDER', 'default')
@@ -34,7 +36,7 @@ class LibCloudStorage(Storage):
                 'LIBCLOUD_PROVIDERS %s not defined or invalid' % provider_name)
         try:
             provider_type = self.provider['type']
-            if isinstance(provider_type, basestring):
+            if isinstance(provider_type, str):
                 module_path, tag = provider_type.rsplit('.', 1)
                 if module_path != 'libcloud.storage.types.Provider':
                     raise ValueError("Invalid module path")
@@ -44,10 +46,10 @@ class LibCloudStorage(Storage):
             self.driver = Driver(
                 self.provider['user'],
                 self.provider['key'],
-                )
-        except Exception, e:
+            )
+        except Exception as e:
             raise ImproperlyConfigured(
-                "Unable to create libcloud driver type %s: %s" % \
+                "Unable to create libcloud driver type %s: %s" %
                 (self.provider.get('type'), e))
         self.bucket = self.provider['bucket']   # Limit to one container
 
@@ -139,7 +141,9 @@ class LibCloudStorage(Storage):
 
 
 class LibCloudFile(File):
+
     """File inherited class for libcloud storage objects read and write"""
+
     def __init__(self, name, storage, mode):
         self._name = name
         self._storage = storage
