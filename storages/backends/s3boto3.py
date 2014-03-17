@@ -13,9 +13,9 @@ from django.core.exceptions import ImproperlyConfigured, SuspiciousOperation
 from django.utils.encoding import force_unicode, smart_str
 
 try:
-    from boto.s3.connection import S3Connection, SubdomainCallingFormat
-    from boto.exception import S3ResponseError
-    from boto.s3.key import Key
+    from boto3.s3.connection import S3Connection, SubdomainCallingFormat
+    from boto3.exception import S3ResponseError
+    from boto3.s3.key import Key
 except ImportError:
     raise ImproperlyConfigured("Could not load Boto's S3 bindings.\n"
                                "See https://github.com/boto/boto")
@@ -93,6 +93,7 @@ def safe_join(base, *paths):
 
 
 class S3BotoStorage(Storage):
+
     """
     Amazon Simple Storage Service using Boto
 
@@ -104,20 +105,20 @@ class S3BotoStorage(Storage):
     connection_response_error = S3ResponseError
 
     def __init__(self, bucket=STORAGE_BUCKET_NAME, access_key=None,
-            secret_key=None, bucket_acl=BUCKET_ACL, acl=DEFAULT_ACL,
-            headers=HEADERS, gzip=IS_GZIPPED,
-            gzip_content_types=GZIP_CONTENT_TYPES,
-            querystring_auth=QUERYSTRING_AUTH,
-            querystring_expire=QUERYSTRING_EXPIRE,
-            reduced_redundancy=REDUCED_REDUNDANCY,
-            encryption=ENCRYPTION,
-            custom_domain=CUSTOM_DOMAIN,
-            secure_urls=SECURE_URLS,
-            url_protocol=URL_PROTOCOL,
-            location=LOCATION,
-            file_name_charset=FILE_NAME_CHARSET,
-            preload_metadata=PRELOAD_METADATA,
-            calling_format=CALLING_FORMAT):
+                 secret_key=None, bucket_acl=BUCKET_ACL, acl=DEFAULT_ACL,
+                 headers=HEADERS, gzip=IS_GZIPPED,
+                 gzip_content_types=GZIP_CONTENT_TYPES,
+                 querystring_auth=QUERYSTRING_AUTH,
+                 querystring_expire=QUERYSTRING_EXPIRE,
+                 reduced_redundancy=REDUCED_REDUNDANCY,
+                 encryption=ENCRYPTION,
+                 custom_domain=CUSTOM_DOMAIN,
+                 secure_urls=SECURE_URLS,
+                 url_protocol=URL_PROTOCOL,
+                 location=LOCATION,
+                 file_name_charset=FILE_NAME_CHARSET,
+                 preload_metadata=PRELOAD_METADATA,
+                 calling_format=CALLING_FORMAT):
         self.bucket_acl = bucket_acl
         self.bucket_name = bucket
         self.acl = acl
@@ -140,7 +141,7 @@ class S3BotoStorage(Storage):
         if not access_key and not secret_key:
             access_key, secret_key = self._get_access_keys()
         self.connection = self.connection_class(access_key, secret_key,
-            calling_format=self.calling_format)
+                                                calling_format=self.calling_format)
 
     @property
     def bucket(self):
@@ -159,7 +160,7 @@ class S3BotoStorage(Storage):
         """
         if self.preload_metadata and not self._entries:
             self._entries = dict((self._decode_name(entry.key), entry)
-                                for entry in self.bucket.list())
+                                 for entry in self.bucket.list())
         return self._entries
 
     def _get_access_keys(self):
@@ -185,16 +186,16 @@ class S3BotoStorage(Storage):
         """Retrieves a bucket if it exists, otherwise creates it."""
         try:
             return self.connection.get_bucket(name,
-                validate=AUTO_CREATE_BUCKET)
+                                              validate=AUTO_CREATE_BUCKET)
         except self.connection_response_error:
             if AUTO_CREATE_BUCKET:
                 bucket = self.connection.create_bucket(name)
                 bucket.set_acl(self.bucket_acl)
                 return bucket
             raise ImproperlyConfigured("Bucket specified by "
-                "AWS_STORAGE_BUCKET_NAME does not exist. "
-                "Buckets can be automatically created by setting "
-                "AWS_AUTO_CREATE_BUCKET=True")
+                                       "AWS_STORAGE_BUCKET_NAME does not exist. "
+                                       "Buckets can be automatically created by setting "
+                                       "AWS_AUTO_CREATE_BUCKET=True")
 
     def _clean_name(self, name):
         """
@@ -245,7 +246,7 @@ class S3BotoStorage(Storage):
         name = self._normalize_name(cleaned_name)
         headers = self.headers.copy()
         content_type = getattr(content, 'content_type',
-            mimetypes.guess_type(name)[0] or Key.DefaultContentType)
+                               mimetypes.guess_type(name)[0] or Key.DefaultContentType)
 
         # setting the content_type in the key object is not enough.
         self.headers.update({'Content-Type': content_type})
@@ -268,8 +269,8 @@ class S3BotoStorage(Storage):
         if self.encryption:
             kwargs['encrypt_key'] = self.encryption
         key.set_contents_from_file(content, headers=headers, policy=self.acl,
-                                 reduced_redundancy=self.reduced_redundancy,
-                                 rewind=True, **kwargs)
+                                   reduced_redundancy=self.reduced_redundancy,
+                                   rewind=True, **kwargs)
         return cleaned_name
 
     def delete(self, name):
@@ -328,7 +329,7 @@ class S3BotoStorage(Storage):
         # convert to string to date
         last_modified_date = parser.parse(entry.last_modified)
         # if the date has no timzone, assume UTC
-        if last_modified_date.tzinfo == None:
+        if last_modified_date.tzinfo is None:
             last_modified_date = last_modified_date.replace(tzinfo=tz.tzutc())
         # convert date to local time w/o timezone
         timezone = tz.gettz(settings.TIME_ZONE)
@@ -340,8 +341,8 @@ class S3BotoStorage(Storage):
             return "%s//%s/%s" % (self.url_protocol,
                                   self.custom_domain, name)
         return self.connection.generate_url(self.querystring_expire,
-            method='GET', bucket=self.bucket.name, key=self._encode_name(name),
-            query_auth=self.querystring_auth, force_http=not self.secure_urls)
+                                            method='GET', bucket=self.bucket.name, key=self._encode_name(name),
+                                            query_auth=self.querystring_auth, force_http=not self.secure_urls)
 
     def get_available_name(self, name):
         """ Overwrite existing file with the same name. """
@@ -352,6 +353,7 @@ class S3BotoStorage(Storage):
 
 
 class S3BotoStorageFile(File):
+
     """
     The default file object used by the S3BotoStorage backend.
 
