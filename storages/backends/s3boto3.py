@@ -13,9 +13,8 @@ from django.core.exceptions import ImproperlyConfigured, SuspiciousOperation
 from django.utils.encoding import force_text, smart_text
 
 try:
-    from boto3.s3.connection import S3Connection, SubdomainCallingFormat
-    from boto3.exception import S3ResponseError
-    from boto3.s3.key import Key
+    from boto3.s3.connection import S3Connection
+    from boto3.core.exceptions import BotoException
 except ImportError:
     raise ImproperlyConfigured("Could not load Boto's S3 bindings.\n"
                                "See https://github.com/boto/boto")
@@ -33,8 +32,6 @@ REDUCED_REDUNDANCY = getattr(settings, 'AWS_REDUCED_REDUNDANCY', False)
 LOCATION = getattr(settings, 'AWS_LOCATION', '')
 ENCRYPTION = getattr(settings, 'AWS_S3_ENCRYPTION', False)
 CUSTOM_DOMAIN = getattr(settings, 'AWS_S3_CUSTOM_DOMAIN', None)
-CALLING_FORMAT = getattr(settings, 'AWS_S3_CALLING_FORMAT',
-                         SubdomainCallingFormat())
 SECURE_URLS = getattr(settings, 'AWS_S3_SECURE_URLS', True)
 FILE_NAME_CHARSET = getattr(settings, 'AWS_S3_FILE_NAME_CHARSET', 'utf-8')
 FILE_OVERWRITE = getattr(settings, 'AWS_S3_FILE_OVERWRITE', True)
@@ -102,7 +99,7 @@ class S3BotoStorage(Storage):
     when writing.
     """
     connection_class = S3Connection
-    connection_response_error = S3ResponseError
+    connection_response_error = BotoException
 
     def __init__(self, bucket=STORAGE_BUCKET_NAME, access_key=None,
                  secret_key=None, bucket_acl=BUCKET_ACL, acl=DEFAULT_ACL,
@@ -117,8 +114,7 @@ class S3BotoStorage(Storage):
                  url_protocol=URL_PROTOCOL,
                  location=LOCATION,
                  file_name_charset=FILE_NAME_CHARSET,
-                 preload_metadata=PRELOAD_METADATA,
-                 calling_format=CALLING_FORMAT):
+                 preload_metadata=PRELOAD_METADATA):
         self.bucket_acl = bucket_acl
         self.bucket_name = bucket
         self.acl = acl
@@ -136,12 +132,10 @@ class S3BotoStorage(Storage):
         self.location = location or ''
         self.location = self.location.lstrip('/')
         self.file_name_charset = file_name_charset
-        self.calling_format = calling_format
         self._entries = {}
         if not access_key and not secret_key:
             access_key, secret_key = self._get_access_keys()
-        self.connection = self.connection_class(access_key, secret_key,
-                                                calling_format=self.calling_format)
+        self.connection = self.connection_class(access_key, secret_key)
 
     @property
     def bucket(self):
@@ -246,7 +240,7 @@ class S3BotoStorage(Storage):
         name = self._normalize_name(cleaned_name)
         headers = self.headers.copy()
         content_type = getattr(content, 'content_type',
-                               mimetypes.guess_type(name)[0] or Key.DefaultContentType)
+                               mimetypes.guess_type(name)[0])
 
         # setting the content_type in the key object is not enough.
         self.headers.update({'Content-Type': content_type})
