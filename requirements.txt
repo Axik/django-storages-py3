@@ -1,6 +1,6 @@
-botocore==0.24.0
+botocore
 six>=1.4.0
 jmespath==0.1.0
 python-dateutil>=2.1
-https://github.com/boto/bcdoc.git@3b160ee79d7eef1b6a6db7665603ba059b8f412d#egg=bcdoc
-https://github.com/boto/boto3.git#egg=boto3
+git+https://github.com/boto/bcdoc.git@3b160ee79d7eef1b6a6db7665603ba059b8f412d#egg=bcdoc
+git+https://github.com/Axik/django-storages-py3.git#egg=boto3
